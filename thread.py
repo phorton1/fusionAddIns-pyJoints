@@ -66,7 +66,7 @@ class myThread(threading.Thread):
         global _running,_in_event
         while _running and not self.stopped:
             
-            time.sleep(0.05)
+            time.sleep(0.03)
                 # 20 frames/second
                 # without _in_event re-entrancy protection,
                 # any quicker than this and fusion just crashes and exits !?!

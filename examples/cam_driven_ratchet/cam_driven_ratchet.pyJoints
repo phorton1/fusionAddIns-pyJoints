@@ -1,0 +1,105 @@
+# example cam_driven_ratchet.pyJoints
+#
+# Anything upto the "step:" token is executed when the
+# command window is created.  In our case we are creating
+# two inputs to be used in the step calling the methods.
+#
+# Note that we must pass in the locally defined 'inputs'
+# variable into the addInput() method.
+#
+# addInput() currently only supports int and float sliders,
+# and if not 'int' you must pass in a valid Fusion units type.
+# Note also that to add other control types you would need
+# to modify the addIn python.
+#
+# Note that comments and blank lines are removed from this file
+# before execution, but nothing is not precompiled at this time.
+
+addInput(inputs, 'degreesPerStep', 'deg', 0.1, 2.0, 1.0)
+
+# the functional constraint of my design is that the pendulum
+# must move at least 6 degrees to either side (for 12 total),
+# or the ratchets will not actually push the wheel far enough
+# to catch the next one. The maximum is arbitrary in this example.
+#
+# Side note:
+#
+#		The pyJoints animation addIn is not really designed
+#       to find failure modes and definitely does not make
+#       use of collisions or contact sets to constrain movment.
+#
+#       So, in this case, if the pendulum swings LESS than 6
+#       degrees to either side, the animation will happilly
+#       continue moving the wheel 3 degrees for each cycle,
+#       even if, in reality, the ratchet would not have
+#       pushed it far enough to catch the next gear.
+#
+#		I guess what I am trying to say is that this addIn
+#       is intended to help you visualize a properly working
+#       mechanism, and it is up to you to notice any failures.
+#       The addIn merely moves joints based on the step !!
+
+addInput(inputs, 'pendulumDegrees', 'int', 12, 24, 12)
+
+# Anything after step: is python code that is executed once
+# per animation frame.  The position of all joints must be
+# calculated, statelessly, based soley on the value of
+# the global 'step' variable.
+#
+# We can access any joint in the model via joints_by_name,
+# and any input via inputs_by_name.value
+#
+# So we *could* set the joint 'cam' rotationValue based on
+# the following statement:
+#
+#	joints_by_name['cam'].jointMotion.rotationValue = step * values_by_name('degreesPerStep')
+#
+# Instead we choose to use the convenience methods
+# provided in animation.py to set joint parameters and
+# calculate certain common things, but this could all
+# be done directlly in python
+
+step:
+
+# determine the degrees, cycle number, and direction of the
+# cam for a symetrical periodic movment of pendulumDegrees
+# about zero for the cam using mod/div. So, for pendulumDegrees=20,
+# it will swing from -10 to 10 degrees. Note that setJointRotation()
+# expects degrees.
+
+per_step = getValueByName('degreesPerStep')
+period_degrees = getValueByName('pendulumDegrees')
+(deg, cycle, ccw) = calculatePeriod(step,per_step,-period_degrees/2,period_degrees/2)
+setJointRotation('cam',deg)
+
+# set the push arms rotation values based the cam's rotation
+# using the mapValues() function, so that when the cam is
+# touching the given push arm, it moves. I.e. when the cam
+# is rotating ccw from 0 to -6 degrees, it will move
+# push1 from 0 to -3 degrees
+
+setJointRotation('push1',mapValues(deg,  0, -6,  0, -3))
+setJointRotation('push2',mapValues(deg,  0,  6,  0, -3))
+
+# to express the ratchet motion on the wheel, we use push1 if
+# rotating ccw and push2 if rotating clockwise.  The wheel
+# will move 3 degrees each time the ratchet on that side is
+# engaged.  By (careful) design, that will be when the given
+# push arm goes from -1 to -3 degrees (for the first degree
+# of movement it will not be engaged)
+
+if ccw:
+	inc = mapValues(getJointRotation('push1'),-1,-3,0,3)
+else:
+	inc = mapValues(getJointRotation('push2'),-1,-3,0,3)
+
+# the starting position of the wheel 1.5 degrees plus the
+# number of cycles that have previously completed times 3 degrees.
+# Note that getJointRotation() returns degrees, not radians!
+# We use the push arm's rotation, which is 0..-3
+# for either arm, but we *could* also base it on when the cam
+# has moved from 0 to -6 degrees ccw or 0 to 6 degrees cs.
+
+setJointRotation('wheel',1.5 + inc + cycle * 3)
+
+# end of cam_driven_ratchet.pyJoints

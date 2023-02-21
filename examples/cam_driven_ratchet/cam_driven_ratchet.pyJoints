@@ -61,6 +61,9 @@ addInput(inputs, 'pendulumDegrees', 'int', 12, 24, 12)
 
 step:
 
+#-----------------------------------
+# cam
+#-----------------------------------
 # determine the degrees, cycle number, and direction of the
 # cam for a symetrical periodic movment of pendulumDegrees
 # about zero for the cam using mod/div. So, for pendulumDegrees=20,
@@ -72,6 +75,10 @@ period_degrees = getValueByName('pendulumDegrees')
 (deg, cycle, ccw) = calculatePeriod(step,per_step,-period_degrees/2,period_degrees/2)
 setJointRotation('cam',deg)
 
+
+#-----------------------------------
+# push arms
+#-----------------------------------
 # set the push arms rotation values based the cam's rotation
 # using the mapValues() function, so that when the cam is
 # touching the given push arm, it moves. I.e. when the cam
@@ -81,6 +88,10 @@ setJointRotation('cam',deg)
 setJointRotation('push1',mapValues(deg,  0, -6,  0, -3))
 setJointRotation('push2',mapValues(deg,  0,  6,  0, -3))
 
+
+#-----------------------------------
+# ratchets
+#-----------------------------------
 # to express the ratchet motion on the wheel, we use push1 if
 # rotating ccw and push2 if rotating clockwise.  The wheel
 # will move 3 degrees each time the ratchet on that side is
@@ -101,5 +112,66 @@ else:
 # has moved from 0 to -6 degrees ccw or 0 to 6 degrees cs.
 
 setJointRotation('wheel',1.5 + inc + cycle * 3)
+
+
+#-----------------------------------
+# pawls
+#-----------------------------------
+#
+# The pawls only move when the push arms are moving.
+# They have a forward movement in two parts (continous)
+#
+#     First they slide down the ramp of the next tooth before engaging the current tooth
+#     Then they rotate a little inwards across the scope of a push
+#     .. these two can be approximated as one movement for my purposes
+#
+# And a backwards movement in four parts (not continuous)
+#
+#     Sliding up the next tooth ramp until they stop and wait for the other pawl to move the wheel
+#     Sliding up the rest of the way to the tip of the ramp (as the other wheel turns the wheel)
+#     Then falling into the next gear at some critical point and at some critical rate as they fall of the tooth
+#	  Then sliding up the previous tooth until they are back where they started
+#
+# So they have 6 movements defined by six points while either moving forward, or
+# moving backwards while the other ratchet is pushing.  When moving backwards
+# and the other ratchet is not moving, they are in a 'dead' zone.
+
+def movePawl(name, the_ccw, my_ccw, self_push, other_push, a1, a2, a3, a4, a5):
+
+	angle = 0
+
+	# moving forwards it moves the whole time
+	# and there is a good approximation over that whole range
+
+	if the_ccw == my_ccw:
+
+		angle = mapValues(self_push, 0, -3,  a1,  a2)
+
+	# moving backwards,
+	# as it is falling, it moves outwards to the tip of the gear
+	# then it is static while the other gear rises
+	# then it rises to the tip
+	# then it falls
+	# and finally it rises back to the starting point
+
+	else:
+
+		if self_push < 0:			# moves outwards to the tip of the gear
+			angle = mapValues(self_push, -3,  0,  a2,  a3)
+		elif other_push > -1:		# static while the other gear rises
+			angle = a3
+		elif other_push > -1.7:		# rises to the tip
+			angle = mapValues(other_push, -1, -1.7, a3, a4)
+		elif other_push > -1.75:	# falls
+			angle = mapValues(other_push, -1.7, -1.75, a4, a5)
+		else:	# rises back to starting position
+			angle = mapValues(other_push, -1.75, -3,  a5, a1)
+
+	setJointRotation(name,angle)
+
+movePawl('pawl1',ccw,1,push1,push2, -1.0,  -4.0,   -2.5,   -3.0,   -4.0)
+movePawl('pawl2',ccw,0,push2,push1, -1.0,   5.3,   -4.0,   -5.2,   -3.0)
+
+
 
 # end of cam_driven_ratchet.pyJoints

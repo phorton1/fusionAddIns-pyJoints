@@ -1,6 +1,8 @@
-# A language to relate a series of joints in Fusion 360
+# pyJoints - an AddIn to animate joints in Fusion 360
 
-![gif](../examples/cam_driven_ratchet/gifs/000000.gif|width=250)
+
+ <img src="../examples/cam_driven_ratchet/gifs/000000.gif" alt="gif" width="500" >
+
 
 ## Overview
 

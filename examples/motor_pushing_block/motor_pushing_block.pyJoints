@@ -1,18 +1,38 @@
 # example motor_pushing_block.pyJoints
 #
 # Anything upto the "step:" token is executed when the
-# command window is created.  In our case we are creating
-# two inputs to be used in the step calculations.
+# command window is created.
 #
 # Note that comments and blank lines are removed from this file
-# before execution, but nothing is not precompiled at this time.
+# before execution.
 #
-# Note that to use the convience method addInput, we must pass in
-# the locally defined 'inputs' variable. addInput() currently only
-# supports int and float sliders, and if not 'int' you must pass
-# in a valid Fusion units type.
+# Here we set a (windows specific) gif folder path relative to the
+# folder containing this script. The gif_folder MUST be set in order
+# to create gifs.
+
+setGifFolder('.\\gifs')
+	# relative to the directory containing this file
+	# although it could be anywhere
+
+# Next we create two inputs to be used in animation
 
 addInput(inputs, 'degreesPerStep', 'deg', 0.1, 45, 6)
+addInput(inputs, 'restPosition', 'mm', -10, 10, 0)
+
+# Note that we must pass the locally defined 'inputs'
+# variable into the addInput() method.
+#
+# addInput() currently only supports int and float sliders,
+# and if not 'int' you must pass in a valid Fusion units type.
+# Note also that to add other control types you would probably
+# need to modify the addIn python.
+#
+# Anything after the 'step:' below is python code that is executed
+# once per animation frame.  The position of all joints must be
+# calculated, statelessly, based soley on the value of the global
+# 'step' variable.
+
+step:
 
 # The idea of this example is that we have a wheel driving
 # a piston (block1), and that 10 mm away we have a block
@@ -23,25 +43,17 @@ addInput(inputs, 'degreesPerStep', 'deg', 0.1, 45, 6)
 # with pyJoints without using contact sets, and giving a little
 # more flexibility with controlling the animation.
 
-addInput(inputs, 'restPosition', 'mm', -10, 10, 0)
-
-# Anything after step: is python code that is executed once
-# per animation frame.  The position of all joints must be
-# calculated, statelessly, based soley on the value of
-# the global 'step' variable.
-#
-# We can access any joint or input value in the model via the
-# joints_by_name and inputs_by_name.value dictionaries, but
-# here we use the provided convenience methods ...
-
-step:
-
-# Be a motor. Set the position of the wheel as a multiple
-# of the step and the degreesPerStep.  Fusion likes 180
-# degree biased angles
-
+# First, however, we set the length of the gif (one full cycle)
+# after we know the final input values.
+# We update the value every time through the loop.
+# but it will be static in practice.
 
 per_step = getValueByName('degreesPerStep')
+setGifLength(360 / per_step)
+
+# Be a motor. Set the position of the wheel as a multiple
+# of the step and the degreesPerStep.
+
 setJointRotation('wheel', step * per_step)
 
 # Let fusion move the arm and slider, and then get

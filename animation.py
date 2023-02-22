@@ -1,7 +1,7 @@
 # animation.py
 
 import adsk.core, traceback, os, os.path, platform
-from . import utils
+from . import utils, gif
 
 # constants
 
@@ -18,6 +18,8 @@ _app = None
 # variables
 
 step = 0
+gif_length = 0
+make_gif = False
 inputs_by_name = {}
 joints_by_name = {}
 program = '' 
@@ -25,18 +27,113 @@ program = ''
 leaf_filename = ''
 animation_path = ''
 
-def cold_init():
-    global animation_path
-    animation_path = addinPath() + sep() + 'examples'
-    readCacheFile()
 
 
-def getLeafFilename():
-    return leaf_filename
+
+#------------------------------------------------------------------------
+# Things called in init of scripts
+#------------------------------------------------------------------------
+
+def setGifLength(len):
+    global gif_length
+    gif_length = len
+
+def setGifFolder(path):
+    cwd = os.getcwd()
+    os.chdir(animation_path)
+    new_path = os.path.abspath(path)
+    gif.gif_folder = new_path
+    os.chdir(cwd)
+
+def setPythonPath(path):
+    gif.python = path
+
+
+def addInput(inputs,name,units,min,max,default):
+    # called by the user at top of their script to
+    # add an input control to the command window which
+    # has a value that can be used in the step animation
+    global inputs_by_name
+    inputs_by_name[name] = {
+        'units' : units,
+        'min' : min,
+        'max' : max,
+        'default' : default,
+        'value' : default }
+    if (units == 'int'):
+        slider = inputs.addIntegerSliderCommandInput(name, name, min, max)
+        slider.valueOne = default
+    else:
+        # Tthere is a magic string "InternalUnits" which can be obtained from the units manager 
+        # to map to the correct internal type. 
+        unitsMgr = _app.activeProduct.unitsManager
+        min_internal = unitsMgr.convert(min,units,unitsMgr.internalUnits)
+        max_internal = unitsMgr.convert(max,units,unitsMgr.internalUnits)
+        default_internal = unitsMgr.convert(default,units,unitsMgr.internalUnits)
+        slider = inputs.addFloatSliderCommandInput(name, name, units, min_internal, max_internal)
+        slider.valueOne = default_internal
+        
+
+
+#------------------------------------------------------------------------
+# Things called in step: of scripts
+#------------------------------------------------------------------------
+
+def getValueByName(name):
+    if not name in inputs_by_name:
+        _ui.messageBox("Could not find input(" + name + ")")
+        return None
+    return inputs_by_name[name]['value']
+    
+def getJointByName(name):
+    if not name in joints_by_name:
+        _ui.messageBox("Could not find joint(" + name + ")")
+        return None
+    return joints_by_name[name]
+
+def getJointRotation(name):
+    if not name in joints_by_name:
+        _ui.messageBox('Could not find joint(' + name + ') in getJointRotation()')
+    return joints_by_name[name].jointMotion.rotationValue / one_degree
+
+def setJointRotation(name,deg):
+    if not name in joints_by_name:
+        _ui.messageBox('Could not find joint(' + name + ') in setJointRotation()')
+    joints_by_name[name].jointMotion.rotationValue = deg * one_degree
+
+def mapValues(val,i1,i2,o1,o2):
+    # maps a value in the range i1 to i2 
+    # to a value in the range o1 to o2
+    pct = 0
+    rslt = 0
+    if i2 < i1:
+        (i2,i1,o2,o1) = (i1,i2,o1,o2)
+    if val < i1:
+        rslt = o1
+    elif val > i2:
+        rslt = o2
+    else:
+        pct = (val - i1) / (i2 - i1)
+        rslt = o1 + pct * (o2 - o1)
+    return rslt
+
+def calculatePeriod(step,degrees_per_step,min,max):
+    if (max < min): (max,min) = (min, max)
+    deg = degrees_per_step * step
+    degrees_per_period = max - min
+    cycle = int(deg/degrees_per_period)
+    ccw = cycle % 2
+    off = deg - (cycle * degrees_per_period)
+    if ccw:
+        rslt = max - off
+    else:
+        rslt = min + off
+    return (rslt,cycle,ccw)
+
 
 
 #-----------------------------------------------------------------
-# filename handling
+# internal API - filename handling
 #-----------------------------------------------------------------
 # set default to the addin examples folder
 
@@ -87,122 +184,23 @@ def getModelLines():
     return lines
 
 
-def getNewFilename():
-    global animation_path,leaf_filename
-    fileDialog = _ui.createFileDialog()
-    fileDialog.initialDirectory = animation_path
-    fileDialog.isMultiSelectEnabled = False
-    fileDialog.title = "Get the pyJoints model file"
-    fileDialog.filter = 'Text files (*.pyJoints)'
-    fileDialog.filterIndex = 0
-    dialogResult = fileDialog.showOpen()
-    if dialogResult == adsk.core.DialogResults.DialogOK:
-        fullname = fileDialog.filename
-        (animation_path,leaf_filename) = os.path.split(fullname)
-        return True
-    return False
+#-----------------------------------------------------------------
+# API to command
+#-----------------------------------------------------------------
 
+def getLeafFilename():
+    return leaf_filename
 
-
-
-#------------------------------------------------------------------------
-# Convenience methods for use in pyJoints scripts
-#------------------------------------------------------------------------
-
-def addInput(inputs,name,units,min,max,default):
-    # called by the user at top of their script to
-    # add an input control to the command window which
-    # has a value that can be used in the step python
-    global inputs_by_name
-    inputs_by_name[name] = {
-        'units' : units,
-        'min' : min,
-        'max' : max,
-        'default' : default,
-        'value' : default }
-    if (units == 'int'):
-        slider = inputs.addIntegerSliderCommandInput(name, name, min, max)
-        slider.valueOne = default
-    else:
-        # grrrr ... so, what?  Even though we told the control what kind of units
-        # it is, we have to now map the min, max, and default to those units ourselves,
-        # which is non-trivial because we don't know the KIND of units (length, angle, or mass)
-        # ok, after figuring it out, apparently there is a magic string "InternalUnits" which can
-        # be obtained from the units manager to map to the correct internal type. Sheesh.
-
-        unitsMgr = _app.activeProduct.unitsManager
-        min_internal = unitsMgr.convert(min,units,unitsMgr.internalUnits)
-        max_internal = unitsMgr.convert(max,units,unitsMgr.internalUnits)
-        default_internal = unitsMgr.convert(default,units,unitsMgr.internalUnits)
-        slider = inputs.addFloatSliderCommandInput(name, name, units, min_internal, max_internal)
-        slider.valueOne = default_internal
-        
-        
-
-def mapValues(val,i1,i2,o1,o2):
-    # maps a value in the range i1 to i2 
-    # to a value in the range o1 to o2
-    pct = 0
-    rslt = 0
-    if i2 < i1:
-        (i2,i1,o2,o1) = (i1,i2,o1,o2)
-    if val < i1:
-        rslt = o1
-    elif val > i2:
-        rslt = o2
-    else:
-        pct = (val - i1) / (i2 - i1)
-        rslt = o1 + pct * (o2 - o1)
-    return rslt
-
-
-def getJointRotation(name):
-    if not name in joints_by_name:
-        _ui.messageBox('Could not find joint(' + name + ') in getJointRotation()')
-    return joints_by_name[name].jointMotion.rotationValue / one_degree
-
-def setJointRotation(name,deg):
-    if not name in joints_by_name:
-        _ui.messageBox('Could not find joint(' + name + ') in setJointRotation()')
-    joints_by_name[name].jointMotion.rotationValue = deg * one_degree
-
-
-def calculatePeriod(step,degrees_per_step,min,max):
-    if (max < min): (max,min) = (min, max)
-    deg = degrees_per_step * step
-    degrees_per_period = max - min
-    cycle = int(deg/degrees_per_period)
-    ccw = cycle % 2
-    off = deg - (cycle * degrees_per_period)
-    if ccw:
-        rslt = max - off
-    else:
-        rslt = min + off
-    return (rslt,cycle,ccw)
-
-
-def getJointByName(name):
-    if not name in joints_by_name:
-        _ui.messageBox("Could not find joint(" + name + ")")
-        return None
-    return joints_by_name[name]
-
-def getValueByName(name):
-    if not name in inputs_by_name:
-        _ui.messageBox("Could not find input(" + name + ")")
-        return None
-    return inputs_by_name[name]['value']
-
-
-
-
-#----------------------------------
-# api to command.py
-#----------------------------------
+def cold_init():
+    global animation_path
+    animation_path = addinPath() + sep() + 'examples'
+    readCacheFile()
 
 def init():
-    global step, inputs_by_name, joints_by_name, program
+    global step, gif_length, make_gif, inputs_by_name, joints_by_name, program
     step = 0
+    gif_length = 0
+    make_gif = False
     inputs_by_name = {}
     joints_by_name = {}
     program = ''
@@ -222,7 +220,6 @@ def stop():
     _ui = None
     _app = None
 
-
 def setInputValue(control):
     if not control.id in inputs_by_name:
         _ui.messageBox('animation.setInputValue() could not find input(' + control.id + ')')
@@ -235,6 +232,20 @@ def setInputValue(control):
     utils.debug(2,'setInputValue(' + control.id + ')=' + str(value))
     input['value'] = value
  
+def getNewFilename():
+    global animation_path,leaf_filename
+    fileDialog = _ui.createFileDialog()
+    fileDialog.initialDirectory = animation_path
+    fileDialog.isMultiSelectEnabled = False
+    fileDialog.title = "Get the pyJoints model file"
+    fileDialog.filter = 'Text files (*.pyJoints)'
+    fileDialog.filterIndex = 0
+    dialogResult = fileDialog.showOpen()
+    if dialogResult == adsk.core.DialogResults.DialogOK:
+        fullname = fileDialog.filename
+        (animation_path,leaf_filename) = os.path.split(fullname)
+        return True
+    return False
 
 
 #-------------------------------------------------------------------
@@ -314,7 +325,6 @@ def readModel(inputs):
 # slice and doAnimation
 #-----------------------------------------------------------
 
-
 def slice():
     try:
         exec(program)
@@ -336,11 +346,10 @@ def doAnimation():
     global step
     step = 0
 
-    app = adsk.core.Application.get()
-    ui = app.userInterface
-    progress = ui.createProgressDialog()
+    progress = _ui.createProgressDialog()
     progress.show("Animating ....","running ....",0,360)
 
+    err = False
     running = True
     while running:
         step += 1
@@ -348,9 +357,21 @@ def doAnimation():
         
         running = slice()
         adsk.doEvents() 
+
+        if make_gif: 
+            if not gif.createPng(_app,_ui,step):
+                err = True
+                running = 0
+            elif step >= gif_length:
+                running = 0
+
         if progress.wasCancelled:
             running = 0
 
     utils.trace("doAnimation() finished")
+    if not progress.wasCancelled and not err and step > 0 and make_gif:
+        progress.hide()
+        gif.createGif()
+
     
 # end of animation.py

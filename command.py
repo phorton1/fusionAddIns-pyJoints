@@ -9,9 +9,6 @@ _handlers = []          # needed for persistency
 _the_step = None
     # the magic spinner control that ties the thread
     # to the animation engine.  
-_command_inputs = None
-    # to allow us to call setupWindow from the onInputChanged 
-    # event handler
 
 _app = None
 _ui = None
@@ -81,9 +78,7 @@ class onCommandCreated(adsk.core.CommandCreatedEventHandler):
             # build the command window controls
             #-----------------------------------------
             
-            global _command_inputs
             inputs = cmd.commandInputs
-            _command_inputs = inputs
 
             text = animation.getLeafFilename()
             if text == '': text = 'Open pyJoints file ...'
@@ -93,7 +88,9 @@ class onCommandCreated(adsk.core.CommandCreatedEventHandler):
             # The current step is an integer spinner control
             
             global _the_step
+
             _the_step = inputs.addIntegerSpinnerCommandInput("step", "step", 0, 100000, 1, 0)
+            inputs.addBoolValueInput( 'make_gif', 'Make GIF', True, '', False)
 
             group1 = inputs.addButtonRowCommandInput('animate','Animate',False)
             items1 = group1.listItems
@@ -141,6 +138,10 @@ class onInputChanged(adsk.core.InputChangedEventHandler):
             if control.id == 'step':
                 utils.debug(0,"step_control=" + str(control.value))
                 animation.step = control.value
+
+            elif control.id == 'make_gif':
+                utils.debug(0,"make_gif_control=" + str(control.value))
+                animation.make_gif = control.value
 
             elif control.id == 'filename':  
                 if animation.getNewFilename():
@@ -264,10 +265,9 @@ class onCommandDestroyed(adsk.core.CommandEventHandler):
                 # safe to call if even thread wasn't started
             
             # release references to control window objects
-            # 
-            global _the_step, _command_inputs
+            
+            global _the_step
             _the_step = None
-            _command_inputs = None
 
             # remove our command history (bad approach, what if we didn't change anything?)
             # cmd = _ui.commandDefinitions.itemById('UndoCommand')

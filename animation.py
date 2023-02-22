@@ -1,14 +1,20 @@
 # animation.py
 
-import adsk.core, traceback, os, os.path, platform
+import adsk.core, traceback, os, os.path
 from . import utils, gif
 
 # constants
 
 ext = '.pyJoints'
-one_degree = 0.0174533;     # degrees to radians
+    # extension fo pyJoints scripts
+one_degree = 0.0174533;     
+    # degrees to radians
 cachefile_leafname = 'last_pyJoint.txt'
-
+    # This file will be in the user's temp directory. On windows that is
+    # something like: C:\Users\{user_name}\AppData\Local\Temp.
+    # We use that file to hold the name of the last .pyJoints script
+    # that sucessfully opened and read in readModel(), so that it
+    # persists across invocatons.
 
 # convenience variables
 
@@ -28,17 +34,23 @@ leaf_filename = ''
 animation_path = ''
 
 
-
-
 #------------------------------------------------------------------------
-# Things called in init of scripts
+# Things typically called at the top (init section) of pyJoints scripts
 #------------------------------------------------------------------------
 
 def setGifLength(len):
+    # Should be called, or else you'll get a gif with 1 png in it
+    # Typically actually called from the step, which is the first time 
+    # the script knows the final state of all the controls.
+    # TODO: I am considering adding an onchange: section to pyJoints
+    # scripts so that they can respond to control changes in realtime, 
+    # in which case, this would be called from that section.
     global gif_length
     gif_length = len
 
 def setGifFolder(path):
+    # must be called or no gif will be created!
+    # if relative, it's relative to the given pyJoints script directory
     cwd = os.getcwd()
     os.chdir(animation_path)
     new_path = os.path.abspath(path)
@@ -46,13 +58,22 @@ def setGifFolder(path):
     os.chdir(cwd)
 
 def setPythonPath(path):
+    # provided as a hook JIC somebody actually uses it and
+    # has a different python than I do
     gif.python = path
 
 
 def addInput(inputs,name,units,min,max,default):
-    # called by the user at top of their script to
+    # called by the user at top of the script to
     # add an input control to the command window which
     # has a value that can be used in the step animation
+    # TODO: This could be granularalized and/or greatly expanded
+    # to allow all kinds of controls to be created. For instance
+    # maybe break this into two: addIntSlider and addFloatSlider,
+    # or more generally, allow them to directly call the Fusion
+    # addXXXX methods, and provide a way for them to link each
+    # control to a value ... i.e. addInput(controlID, valueName, control_field) 
+
     global inputs_by_name
     inputs_by_name[name] = {
         'units' : units,
@@ -76,8 +97,9 @@ def addInput(inputs,name,units,min,max,default):
 
 
 #------------------------------------------------------------------------
-# Things called in step: of scripts
+# Things called in step: section of scripts
 #------------------------------------------------------------------------
+# These are, technically, convenience methods
 
 def getValueByName(name):
     if not name in inputs_by_name:
@@ -133,58 +155,6 @@ def calculatePeriod(step,degrees_per_step,min,max):
 
 
 #-----------------------------------------------------------------
-# internal API - filename handling
-#-----------------------------------------------------------------
-# set default to the addin examples folder
-
-def sep():
-    if platform.system == 'Darwin': 
-        return '/'
-    return '\\'
-
-def addinPath():
-    if platform.system == 'Darwin':      # Mac
-        return '~/Library/Application Support/Autodesk/Autodesk Fusion 360/API/AddIns/pyJoints'
-    return os.environ['APPDATA'] + '\\Autodesk\\Autodesk Fusion 360\\API\\AddIns\\pyJoints'
-
-def cacheFilename():
-    return addinPath()+sep()+cachefile_leafname
-
-def writeCacheFile():
-    f = open(cacheFilename(),'w')
-    f.write(animation_path + "\t" + leaf_filename)
-    f.close
-
-def readCacheFile():
-    global animation_path,leaf_filename
-    if os.path.isfile(cacheFilename()):
-        f = open(cacheFilename())
-        line = f.readline()
-        f.close
-        if '\t' in line:
-            (tpath,fname) = line.split('\t')
-            if os.path.isdir(tpath):
-                animation_path = tpath
-                if os.path.isfile(tpath+sep()+fname):
-                    leaf_filename = fname
-
-
-def getModelLines():
-    global leaf_filename
-    lines = []
-    if os.path.isdir(animation_path):
-        filename = animation_path+sep()+leaf_filename
-        if os.path.isfile(filename):
-            f = open(filename)
-            lines = f.readlines()
-            f.close
-            writeCacheFile()
-        else:
-            leaf_filename = ''
-    return lines
-
-
-#-----------------------------------------------------------------
 # API to command
 #-----------------------------------------------------------------
 
@@ -193,7 +163,7 @@ def getLeafFilename():
 
 def cold_init():
     global animation_path
-    animation_path = addinPath() + sep() + 'examples'
+    animation_path = os.path.join(utils.getAddinPath(),'examples')
     readCacheFile()
 
 def init():
@@ -249,8 +219,43 @@ def getNewFilename():
 
 
 #-------------------------------------------------------------------
-# read the model
+# read the model and cache the path and leaf_name of any that read
 #-------------------------------------------------------------------
+
+def cacheFilename():
+    return os.path.join(utils.getTempDir(),cachefile_leafname)
+   
+def writeCacheFile():
+    f = open(cacheFilename(),'w')
+    f.write(animation_path + "\t" + leaf_filename)
+    f.close
+
+def readCacheFile():
+    global animation_path,leaf_filename
+    if os.path.isfile(cacheFilename()):
+        f = open(cacheFilename())
+        line = f.readline()
+        f.close
+        if '\t' in line:
+            (tpath,fname) = line.split('\t')
+            if os.path.isdir(tpath):
+                animation_path = tpath
+                if os.path.isfile(os.path.join(tpath,fname)):
+                    leaf_filename = fname
+
+def getModelLines():
+    global leaf_filename
+    lines = []
+    if os.path.isdir(animation_path):
+        filename = os.path.join(animation_path,leaf_filename)
+        if os.path.isfile(filename):
+            f = open(filename)
+            lines = f.readlines()
+            f.close
+            writeCacheFile()
+        else:
+            leaf_filename = ''
+    return lines
 
 def space(i):   # for debugging output only
     s = ''
@@ -371,7 +376,7 @@ def doAnimation():
     utils.trace("doAnimation() finished")
     if not progress.wasCancelled and not err and step > 0 and make_gif:
         progress.hide()
-        gif.createGif()
+        gif.createGif(_ui)
 
     
 # end of animation.py

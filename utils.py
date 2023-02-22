@@ -1,6 +1,9 @@
 # utils.py
 
-import adsk.core
+import os.path, tempfile
+
+appname = 'pyJoints'
+appauthor = 'pyJoints'
 
 _trace = False
 _debug = 0
@@ -12,8 +15,12 @@ def trace(s):
 def debug(i,s):
     if i < _debug: print(s)
 
-def error(s):
-    ui = adsk.core.Application.get().userInterface 
-    if ui: ui.messageBox(s)
+def getAddinPath():
+    (path,fn) = os.path.split(os.path.abspath(__file__))
+    return path
+
+def getTempDir():
+    return tempfile.gettempdir()
+   
 
 # end of utils.py

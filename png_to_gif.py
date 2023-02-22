@@ -1,7 +1,8 @@
 # png_to_gif.py
 #
 # A python script run OUTSIDE of Fusion 360 by a shell call during
-# gif.createGif()
+# gif.createGif().  See notes in gif.py about how and why I use
+# an external python interpreter for this.
 
 
 import os, sys
@@ -15,7 +16,7 @@ remove_pngs = False
 #--------------------------------
 
 if len(sys.argv) < 2 or len(sys.argv) > 3:
-	print("usage: png_to_gif png_folder [remove_pngs]")
+	print("\nerror: incorrect number of arguments\n")
 	count = 0
 	for arg in sys.argv:
 		print("arg[" + str(count) + ']="' + sys.argv[count] + '"')
@@ -48,7 +49,7 @@ with os.scandir(png_folder) as entries:
 					highest_gif = num
 
 if not len(pngs):
-	print("No png files found in " + png_folder)
+	print("\nerror: No png files found in " + png_folder + "\n")
 	sys.exit()
 
 print("found " + str(len(pngs)) + " pngs  highest_gif=" + str(highest_gif))
@@ -89,4 +90,4 @@ if remove_pngs:
 	for png in pngs:
 		os.unlink(png)
 
-print("png_to_gif.py finished")
+print("success: png_to_gif.py proccessed " + str(len(pngs)) + " pngs into " + gif_filename)

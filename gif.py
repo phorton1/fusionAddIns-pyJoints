@@ -1,30 +1,43 @@
 # gif.py
 
-import adsk.core, os, traceback, subprocess
+import adsk.core, os, os.path, traceback, subprocess
 from . import utils,animation
 
 png_root = 'frame_'
 script_name = 'png_to_gif.py'
 python =  os.environ['USERPROFILE'] + '\\AppData\\Local\\Programs\\Python\\Python310\\python.exe'
-    # Windows and Python 3.10 specific path !!
-    # Use setPythonPath() if this doesn't work for you.
+    # Python 3.10 and Windows installation specific path !!
+    # gif_to_py.py runs under an external python interpreter, into which
+    # we have pip installed 'imageio'.  I don't currently know how I would
+    # distribute imagio with my app such that it could be called from fusion,
+    # especially since imageio itself relies on multiple other python libraries
+    # dependencies: black flake8 pytest pytest-cov sphinx numpydoc.
+    #
+    # The simplest solution, for me, was merely to install the current version
+    # of python on my machine, using the defaults, then open a dos box and type
+    #
+    #         pip install imageio
+    #
+    # and then figure out where the python interpreter was and call it from there.
 gif_folder = ''
     # Folder where PNGs and the GIF will be created.
+    # defaults to blank, so no GIF will be created.
+    # User's script must call animation.setGifFolder()
+    # AND really *should* call animation.setGifLength()
 
-
-def pngFilename(step):
-    n = str(step)
-    i = len(n)
-    while i<6:
-        i += 1
-        n = '0' + n
-    return gif_folder + animation.sep() + png_root + n
-    
 
 def createPng(app,ui,step):
+    # create a png in the gif_folder for the given step
+    # short return if gif_folder not specified in script
     if gif_folder == '':
+        ui.messageBox("Cannot make GIF!!  A gif folder must be specified in the script by calling setGifFolder()!!!")
         return False
-    filename = pngFilename(step)
+    filename = str(step)
+    i = len(filename)
+    while i<6:
+        i += 1
+        filename = '0' + filename
+    filename = os.path.join(gif_folder,png_root + filename)
     utils.debug(0,"capture frame(" + str(step) + ") to " + filename)
     try:
         app.activeViewport.saveAsImageFile(filename, 0, 0)
@@ -35,12 +48,22 @@ def createPng(app,ui,step):
     return False
 
 
-def createGif():
-
-    script = animation.addinPath() + animation.sep() + script_name
+def createGif(ui):
+    # Will only be called if gif_folder is specified in script
+    # Note that png_to_gif.py just uses whatever PNGs are found
+    # in the folder, and that we always display a message box with
+    # it's results, whatever that may be ... 
+    script = os.path.join(utils.getAddinPath(),script_name)
     utils.debug(0,"createGif(" + gif_folder + ")")
     rslt = subprocess.check_output(python + " \"" + script + "\" \"" + gif_folder + "\" remove_pngs")
-    utils.debug(0," back from " + script_name + " rslt=" + str(rslt))
-    
+    str_rslt = rslt.decode('ascii')
+    utils.debug(0," back from " + script_name + " str_rslt=" + str_rslt)
+    if ui:
+        if 'success:' in str_rslt:
+            lines = str_rslt.split('\n')
+            for line in lines:
+                if 'success:' in line:
+                    str_rslt = line
+        ui.messageBox(str_rslt)
 
 # end of gif.py

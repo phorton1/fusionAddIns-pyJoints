@@ -1,7 +1,7 @@
 # command.py
 # the command window lifecycle
 
-import adsk.core, adsk.fusion, traceback
+import adsk.core, adsk.fusion, traceback, os.path
 from . import utils, animation, thread, pyJoints
 
 _handlers = []          # needed for persistency
@@ -42,8 +42,7 @@ class onCommandCreated(adsk.core.CommandCreatedEventHandler):
             cmd.isExecutedWhenPreEmpted = False
             cmd.setDialogMinimumSize(300,200)
 
-            sep = animation.sep()
-            helpfile = animation.addinPath() + sep + 'docs' + sep + 'readme.md' 
+            helpfile = os.path.join(utils.getAddinPath(),'docs','readme.md') 
             cmd.helpFile = helpfile
             
             # Not useful to me:

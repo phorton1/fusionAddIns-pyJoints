@@ -191,8 +191,12 @@ def stop():
     _app = None
 
 def setInputValue(control):
+    # By not reporting an error here, we theoretically allow
+    # the user to code any kind of command window input control
+    # and retrieve it's value the hard way
+     
     if not control.id in inputs_by_name:
-        _ui.messageBox('animation.setInputValue() could not find input(' + control.id + ')')
+        # _ui.messageBox('animation.setInputValue() could not find input(' + control.id + ')')
         return None
     input = inputs_by_name[control.id]
     value = control.valueOne
@@ -330,7 +334,7 @@ def readModel(inputs):
 # slice and doAnimation
 #-----------------------------------------------------------
 
-def slice():
+def doSlice(cmd):
     try:
         exec(program)
         view = _app.activeViewport
@@ -344,7 +348,7 @@ def slice():
 
 
 
-def doAnimation():
+def doAnimation(cmd):
 
     utils.trace("doAnimation() started()")
 
@@ -360,7 +364,7 @@ def doAnimation():
         step += 1
         progress.progressValue = step % 360
         
-        running = slice()
+        running = doSlice(cmd)
         adsk.doEvents() 
 
         if make_gif: 

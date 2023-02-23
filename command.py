@@ -208,7 +208,7 @@ class onExecutePreview(adsk.core.CommandEventHandler):
                 # and stop the thread if there is a problem
                 
                 cmd = adsk.core.Command.cast(args.command)
-                if not animation.slice(cmd):
+                if not animation.doSlice(cmd):
                     thread.stopThread()
 
                 # setting isValidResult = True means that onCommandExecute

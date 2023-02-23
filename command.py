@@ -207,7 +207,8 @@ class onExecutePreview(adsk.core.CommandEventHandler):
                 # do the animation one slice at a time
                 # and stop the thread if there is a problem
                 
-                if not animation.slice():
+                cmd = adsk.core.Command.cast(args.command)
+                if not animation.slice(cmd):
                     thread.stopThread()
 
                 # setting isValidResult = True means that onCommandExecute
@@ -224,8 +225,8 @@ class onExecutePreview(adsk.core.CommandEventHandler):
 
 
 class onCommandExecute(adsk.core.CommandEventHandler):
-    # happens when user presses OK in command window
-    # if onExecutePreview did NOT set isValidResult
+    # happens when user presses OK in command window.
+    # only called if onExecutePreview did NOT set isValidResult.
     def __init__(self):
         super().__init__()
     def notify(self, args):
@@ -235,7 +236,8 @@ class onCommandExecute(adsk.core.CommandEventHandler):
             thread.stopThread()
                 # safe to call if even thread wasn't started
     
-            animation.doAnimation()
+            cmd = adsk.core.Command.cast(args.command)
+            animation.doAnimation(cmd)
                 # do the animation modally with a progress window
 
             utils.trace("onCommandExecute finished")

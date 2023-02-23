@@ -60,6 +60,10 @@ previous frames (or the positions of animated joints) in it's calculations.
 
 ## The cam_driven_ratchet example, in it's entirety
 
+This example shows most of the existing convenience methods that can
+be called from a script and is documented well enough to be presented
+directly within this documentation.
+
     # example cam_driven_ratchet.pyJoints
     #
     # Anything upto the "step:" token is executed when the
@@ -218,5 +222,7 @@ previous frames (or the positions of animated joints) in it's calculations.
     movePawl('pawl1',ccw,1,push1,push2, -1.0,  -4.0,   -2.9,   -3.5,   0.2)
     movePawl('pawl2',ccw,0,push2,push1, -1.0,   5.3,   -4.0,   -5.2,   0.2)
 
+On the next page we will begin to enumerate and describe more fully the
+things that can easily be called from pyJoints scripts.
 
 [Next](inputs.md) - The initialization section and defining [inputs](inputs.md) ...

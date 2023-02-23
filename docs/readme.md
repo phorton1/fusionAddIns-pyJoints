@@ -42,6 +42,48 @@ in Fusion 360 and are having similar difficulties ... that the provided
 features are too simple, don't work well, or just simply don't do
 what you need ... then perhaps this AddIn can help you.
 
+## pyJoints vs existing Fusion 360 features
+
+When using pyJoints, one **relies** on Fusion to model the
+basic relationship between joints where they are **determinate**.
+By **determinate** I mean joints that are **constrained**
+by, or **dependent** on the positions of other joints in the model
+due to the inferred physical coupling in the design.
+
+You don't animate every joint in the model.  You only
+animate certain joints that *drive* the other ones.
+
+Apart from this basic *inferred physical coupling*,
+Fusion provides a number of other ways to couple
+joints, including *motion links*, *tangental relationships*,
+and *contact sets*.
+
+Although I specifically wrote this addIn because I had
+problems using those other ways of coupling joints in
+Fusion, that does not mean that they are 'bad', or should
+not be used.  In fact, if one of those ways of coupling
+joints works for you then it is very likely that you
+should use it.
+
+pyJoints is intended for the cases where those provided
+mechanisms **don't work** well, like for instance, when
+*tangental relationships* get **wonky** or Fusion refuses
+to create them for the two faces you want to stay in touch,
+or when *contact sets* and/or *motion links* just seem to
+**freeze** your model and stop anything from working correctly,
+
+Apart from that, or rather, in addition, if your model is otherwise
+working well, pyJoints can provide something besides the
+limited *Animate Joint Relationships* command, the difficult
+to use (and frankly weird and very limited) *Motion Study*, or the
+*Animation Product* ... which doesn't even respect the joints
+you've so carefully crafted, in order to **animate
+your model** and/or **capture GIF animations** of it in motion.
+
+That's when **pyJoints** might prove to be useful.
+
+I hope you give it a try!!
+
 
 ## License
 

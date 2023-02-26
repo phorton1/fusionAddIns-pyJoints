@@ -28,6 +28,29 @@ gif_length = 0
 make_gif = False
 inputs_by_name = {}
 joints_by_name = {}
+
+# the script is currently broken into two parts based on step:
+# with the first part being executed in onCommandCreated() AFTER
+# the main controls are created, and the second part 'per_frame'
+# per step as the 'program'.
+
+# An enhancement could be to have four sections with three delimiters
+# - the first part would be initialization, run from onCommandCreated()
+#   BEFORE the main controls are created.
+# - the second part, would be the 'controls:' section, that is run from
+#   onCommandCreated() AFTER the main controls are created.
+# - the third part, would be the 'ready:' section, run when the
+#   control values are known, at the top of onCommandExecute(),
+#   to set the gif sizes
+# - the fourth part would be the current 'step:' section
+# We could even have many more delimitations of sections, before
+#    and after things, for example, we could keep a dictionary
+#    of all scripts that have run in the current pyJoints lifecycle,
+#    and have a one-time initializaiton per script-loaded-in-pyJoints,
+#    and/or things like 'before_modeless','after_modeless'
+#    A complete syntactical change might be in order with a 
+#    dictionary of parts of the program to run at given times.
+
 program = '' 
 
 leaf_filename = ''

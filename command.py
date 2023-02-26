@@ -2,7 +2,7 @@
 # the command window lifecycle
 
 import adsk.core, adsk.fusion, traceback, os.path
-from . import utils, animation, thread, pyJoints
+from . import utils, animation, thread, pyJoints, gif
 
 _handlers = []          # needed for persistency
 
@@ -89,12 +89,23 @@ class onCommandCreated(adsk.core.CommandCreatedEventHandler):
             global _the_step
 
             _the_step = inputs.addIntegerSpinnerCommandInput("step", "step", 0, 100000, 1, 0)
+            
+            # checkbox and initially hidden gif width and height
+            
             inputs.addBoolValueInput( 'make_gif', 'Make GIF', True, '', False)
+            temp = inputs.addIntegerSpinnerCommandInput("gif_width", "    Width", 0, 10000, 1, gif.gif_width)
+            temp.isVisible = False
+            temp = inputs.addIntegerSpinnerCommandInput("gif_height", "    Height", 0, 10000, 1, gif.gif_height)
+            temp.isVisible = False
+            
+            # animate button
 
             group1 = inputs.addButtonRowCommandInput('animate','Animate',False)
             items1 = group1.listItems
             items1.add('Stop',True,'resources/Pause')
             items1.add('Run', False,'resources/Run')
+
+            # optional debug states
 
             if utils._trace:    
                 group2 = inputs.addRadioButtonGroupCommandInput('debug', 'Debug')
@@ -141,6 +152,13 @@ class onInputChanged(adsk.core.InputChangedEventHandler):
             elif control.id == 'make_gif':
                 utils.debug(0,"make_gif_control=" + str(control.value))
                 animation.make_gif = control.value
+                inputs = args.firingEvent.sender.commandInputs
+                inputs.itemById('gif_width').isVisible = control.value
+                inputs.itemById('gif_height').isVisible = control.value
+            elif control.id == 'gif_width':
+                gif.gif_width = control.value
+            elif control.id == 'gif_height':
+                gif.gif_height = control.value
 
             elif control.id == 'filename':  
                 if animation.getNewFilename():

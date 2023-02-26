@@ -24,7 +24,16 @@ gif_folder = ''
     # defaults to blank, so no GIF will be created.
     # User's script must call animation.setGifFolder()
     # AND really *should* call animation.setGifLength()
-
+gif_width = 0
+gif_height = 0
+    # Note that setting these from the script has weird behavior.
+    # if done from the step: section, they will override the command window values 
+    #    and be the visible values the next time the window is opened
+    # If done from the initialization section, they are set after the control
+    #    is created, and so, if the user does NOT modify the controls, they
+    #    will be used to create the gif.  If they ARE modified by the user,
+    #    those values will be used.
+ 
 
 def createPng(app,ui,step):
     # create a png in the gif_folder for the given step
@@ -40,7 +49,7 @@ def createPng(app,ui,step):
     filename = os.path.join(gif_folder,png_root + filename)
     utils.debug(0,"capture frame(" + str(step) + ") to " + filename)
     try:
-        app.activeViewport.saveAsImageFile(filename, 0, 0)
+        app.activeViewport.saveAsImageFile(filename, gif_width, gif_height)
         return True 
     except:
         if ui: 

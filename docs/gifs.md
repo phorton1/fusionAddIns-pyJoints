@@ -121,7 +121,7 @@ help pages were made using this feature.
 
 ## Back to the python path issue
 
-If your python is in a different location you may call **setPytonPath()**
+If your python is in a different location you may call **setPytgonPath()**
 from your pyJoints script to tell pyJoints where it is.  Your python
 **must have imageio installed**.
 

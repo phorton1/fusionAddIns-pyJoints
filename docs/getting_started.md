@@ -51,7 +51,7 @@ folder under that*.
 
 ![initial_file_selection_window.jpg](images/initial_file_selection_window.jpg)
 
-Navigate to the **cam_driven_ratchet** folder and select the **cam_driven_ratche.pyJoints**
+Navigate to the **cam_driven_ratchet** folder and select the **cam_driven_ratchet.pyJoints**
 script from that folder.  When you have done so, and pressed the *Open* button in the file
 dialog, the addIn command window should change, adding two new slider controls;
 
@@ -145,16 +145,3 @@ pyJoints will **not** run a Modal animation when you press the OK button.
 It is not a bug ... it's a feature!
 
 [Next](basics.md) - The [basics](basics.md) of pyJoint scripts ...
-
-
-
-
-
-
-
-
-
-
-
-
-

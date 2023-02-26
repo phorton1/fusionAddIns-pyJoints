@@ -18,7 +18,7 @@ The addIn is factored into separate **.py** files:
 - **animation.py** - contains the addIn specific functionality doAnimation() and doSlice() as well as all of
 	the convenience API's available in pyJoint scripts
 - **gif.py** - contains the interface between animation.py and **png_to_gif.py**
-- **png_to_gif.py** - is a script which runs separately on an **external python interpreter*
+- **png_to_gif.py** - is a script which runs separately on an *external python interpreter*
 	to convert a collection of PNG files into a single animated GIF file
 
 It all starts in pyJoints.py when Fusion calls it's **run()** method when the
@@ -48,7 +48,7 @@ When you press the triangular 'run' button a thread is started.
 
 The thread keeps a handle to the command window  **'_the_step'** integer spinner control,
 and increments that integer control every 0.03 seconds or so.  When Fusion sees that
-_the_step ontrol has changed it will call command.onInputChanged() which increments
+_the_step control has changed it will call command.onInputChanged() which increments
 the global variable animation.step, and then Fusion will subsequently call
 command.onExecutePreview() ... which is the CommandEventHandler for the
 ExecuteCommandPreview event, which finally calls **animation.doSlice()**
@@ -111,7 +111,7 @@ to user defined command window controls.
   parameters to the call (min, max, default, etc) must
   be passed in Fusion's **internal units** ... cm, radians,
   and kgs. So, when creating a 'degrees' float slider,
-  even though you told Fusion the units weer 'deg' in the
+  even though you told Fusion the units were 'deg' in the
   ctor, you must map the minimum and maximum values to radians
   before passing them to the same ctor.  Although not impossible,
   this is seen by me as onerous to the pyJoints script writer,

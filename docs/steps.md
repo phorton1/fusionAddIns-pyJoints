@@ -1,4 +1,4 @@
-# pyJoints - Programming your animation vis the global **step** variable
+# pyJoints - Programming your animation via the global **step** variable
 
 **[Home](readme.md)** --
 **[Getting Started](getting_started.md)** --

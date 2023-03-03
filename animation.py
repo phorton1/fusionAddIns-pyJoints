@@ -1,6 +1,6 @@
 # animation.py
 
-import adsk.core, traceback, os, os.path
+import adsk.core, traceback, os, os.path, math
 from . import utils, gif
 
 # constants

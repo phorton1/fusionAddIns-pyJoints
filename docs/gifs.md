@@ -77,9 +77,11 @@ your pyJoints script* or with an absolute path.  If the path does not exist, it 
 (likely) be created.  In my examples it is a subfolder called 'gifs' within
 the folder containing the pyJoints script.
 
+```
 	setGifFolder('.\\gifs')
 		# relative to the directory containing this file
 		# although it could be anywhere
+```
 
 **setGifFolder() must be called from the initialization section** of your script
 and use the correct path separators and naming conventions for your machine.
@@ -97,12 +99,14 @@ to call it in the *step section* of the script because my examples vary the
 *period* of the animation, so in order to capture one full cycle
 you will see the following in my *cam_driven_ratchet* example:
 
+```
 	setGifLength(2 * period_degrees / per_step)
 		# Set the length of the gif (one full cycle)
 		# after we know the final input values.
 		# We update the value every time through the loop.
 		# but it will be static for all intents and purposes
 		# in the onCommandExecute::doAnimation() method
+```
 
 
 ### check the box and DONT run a modeless animation
@@ -136,7 +140,9 @@ and voila!! I had an externally callable python with imageio :-)
 I then ferreted out where the python interpreter was located.
 On my machine that turned out to be:
 
+```
 	os.environ['USERPROFILE'] + '\\AppData\\Local\\Programs\\Python\\Python310\\python.exe'
+```
 
 I hope you can figure this out, and that perhaps someone can let me
 know a better way to do this.

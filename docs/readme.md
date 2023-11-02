@@ -24,7 +24,7 @@ You can learn more on the following pages:
 - **[Getting Started](getting_started.md)** - Installing the AddIn and running an example pyJoints script
 - **[Basics](basics.md)** - Basic structure of a pyJoints script
 - **[Inputs](inputs.md)** - Creating inputs and initializing your animation
-- **[Steps](steps.html)** - Programming the animation vis the global **step** variable
+- **[Steps](steps.md)** - Programming the animation vis the global **step** variable
 - **[GIFS](gifs.md)** - How to create animated GIFs from your pyJoints script
 - **[Details](details.md)** - Detailed Notes and Advanced Topics
 
